@@ -88,7 +88,7 @@
     </div>
 
     <script>
-        // 🚨 IMPORTANTE: Reemplaza esta URL con tu dominio real de Railway
+        // URL de tu API pública en Railway
         const API_URL = 'https://consultas-production-792c.up.railway.app/api/cedula/';
 
         async function buscarCedula() {
@@ -150,7 +150,7 @@
             order.forEach(key => {
                 let value = data[key] !== null ? data[key] : 'N/A';
                 
-                // Formato simple de fecha si es necesario
+                // Formato simple de fecha
                 if (key.includes('Fch') && value !== 'N/A') {
                     value = new Date(value).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
                 }
