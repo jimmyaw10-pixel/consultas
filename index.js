@@ -10,11 +10,11 @@ const PORT = process.env.PORT || 3000;
 // ¡Asegúrate de que la contraseña y el nombre de la base de datos sean correctos!
 // --------------------------------------------------------------------------
 const pool = mysql.createPool({
-    host: 'mysql.railway.internal',                   // Host Interno de Railway
+    host: 'ballast.proxy.rlwy.net',                   // Host Interno de Railway
     user: 'root',                                     // Tu usuario de BD
     password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // ¡TU CONTRASEÑA!
     database: 'railway',                              // ¡NOMBRE DE TU ESQUEMA!
-    port: 3306,
+    port: 35462,
     waitForConnections: true,
     connectionLimit: 10
 });
@@ -56,4 +56,5 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
+
 });
