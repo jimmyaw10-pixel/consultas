@@ -7,11 +7,11 @@ const PORT = process.env.PORT || 3000;
 // Configuración de la conexión a MySQL usando las variables de entorno de Railway
 // Railway inyecta automáticamente estas variables para la conexión interna (Private Networking)
 const pool = mysql.createPool({
-    host: process.env.MYSQLHOST,           // e.g., mysql.railway.internal
-    user: process.env.MYSQLUSER,           // e.g., root
-    password: process.env.MYSQLPASSWORD,   // Contraseña larga
-    database: process.env.MYSQLDATABASE,   // e.g., cedulas
-    port: process.env.MYSQLPORT || 3306,
+    host: 'mysql.railway.internal',       // Host Interno Fijo
+    user: 'root',                         // Usuario Fijo
+    password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Contraseña Fija
+    database: 'railway',                  // Nombre de la Base de Datos Fijo
+    port: 3306,
     waitForConnections: true,
     connectionLimit: 10
 });
