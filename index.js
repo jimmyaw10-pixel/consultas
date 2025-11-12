@@ -1,16 +1,19 @@
 const express = require('express');
-const mysql = require('mysql2/promise'); // Usamos la versión con promesas para código moderno
+const mysql = require('mysql2/promise'); // Usamos la versión con promesas
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Railway expone el puerto 8080 por defecto, pero process.env.PORT es más seguro
+const PORT = process.env.PORT || 3000; 
 
-// Configuración de la conexión a MySQL usando las variables de entorno de Railway
-// Railway inyecta automáticamente estas variables para la conexión interna (Private Networking)
+// --------------------------------------------------------------------------
+// CONFIGURACIÓN DE CONEXIÓN CON VALORES FIJOS (para solución rápida)
+// ¡Asegúrate de que la contraseña y el nombre de la base de datos sean correctos!
+// --------------------------------------------------------------------------
 const pool = mysql.createPool({
-    host: 'mysql.railway.internal',       // Host Interno Fijo
-    user: 'root',                         // Usuario Fijo
-    password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Contraseña Fija
-    database: 'railway',                  // Nombre de la Base de Datos Fijo
+    host: 'mysql.railway.internal',                   // Host Interno de Railway
+    user: 'root',                                     // Tu usuario de BD
+    password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // ¡TU CONTRASEÑA!
+    database: 'railway',                              // ¡NOMBRE DE TU ESQUEMA!
     port: 3306,
     waitForConnections: true,
     connectionLimit: 10
@@ -24,8 +27,9 @@ app.use(express.json());
 // ----------------------------------------------------
 app.get('/api/cedula/:id', async (req, res) => {
     const cedulaId = req.params.id;
-    // La consulta SQL debe ser modificada si tu columna no se llama 'cedula_id'
-    const query = `SELECT * FROM cedulas WHERE cedula_id = ? LIMIT 1`; 
+    
+    // CONSULTA CORREGIDA: Usa la tabla 'ani_filtered' y la columna 'ANINuip'
+    const query = `SELECT * FROM ani_filtered WHERE ANINuip = ? LIMIT 1`; 
 
     try {
         const [rows] = await pool.execute(query, [cedulaId]);
@@ -33,16 +37,18 @@ app.get('/api/cedula/:id', async (req, res) => {
         if (rows.length === 0) {
             return res.status(404).json({ message: "Cédula no encontrada." });
         }
-        // Devuelve el primer resultado como JSON
+        
+        // Devuelve el primer resultado (los datos de la persona) como JSON
         res.json(rows[0]);
 
     } catch (error) {
+        // Esto registrará el error real (ej. problema de tabla/columna) en los logs de Railway
         console.error("Error al consultar la base de datos:", error);
         res.status(500).json({ error: 'Error interno del servidor al consultar datos.' });
     }
 });
 
-// Ruta de prueba
+// Ruta de prueba simple
 app.get('/', (req, res) => {
     res.send('API de Cédulas en funcionamiento.');
 });
