@@ -9,13 +9,13 @@ const PORT = process.env.PORT || 3000;
 // Usamos el Host y Puerto de Proxy TCP para evitar el firewall interno,
 // conectando exitosamente al esquema 'cedulas'.
 const pool = mysql.createPool({
-    host: 'ballast.proxy.rlwy.net',           // HOST PÚBLICO (Inseguro, pero funcional)
-    user: 'root',                             // Usuario de BD
-    password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Contraseña
-    database: 'cedulas',                      // Esquema corregido
-    port: 35462,                              // PUERTO PÚBLICO TCP
-    waitForConnections: true,
-    connectionLimit: 10
+    // ¡DEJAREMOS EL HOST PÚBLICO TEMPORALMENTE para que funcione, pero usaremos variables!
+    host: process.env.MYSQL_PUBLIC_HOST,    // Usar variable para el host público
+    user: process.env.MYSQL_USER,           // Usar variable para el usuario
+    password: process.env.MYSQL_PASSWORD,   // ¡USAR VARIABLE PARA LA CONTRASEÑA!
+    database: 'cedulas',                    // El esquema correcto
+    port: process.env.MYSQL_PUBLIC_PORT,    // Usar variable para el puerto público
+    // ...
 });
 
 // Middleware para aceptar JSON
@@ -53,3 +53,4 @@ app.get('/api/cedula/:id', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
+
