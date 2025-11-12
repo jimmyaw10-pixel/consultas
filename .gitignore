@@ -1,0 +1,6 @@
+# Dependencias
+/node_modules
+/npm-debug.log*
+
+# Archivos de OS
+.DS_Store
