@@ -1,36 +1,36 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path'); 
+const cors = require('cors'); // <-- Implementación de CORS
 
 const app = express();
 const PORT = process.env.PORT || 3000; 
 
+// --- IMPLEMENTAR CORS PARA PERMITIR PETICIONES ENTRE DOMINIOS ---
+app.use(cors()); 
+
 // --- CONEXIÓN INTERNA SEGURA USANDO VARIABLES DE REFERENCIA ---
 const pool = mysql.createPool({
-    // Las variables DB_HOST, DB_USER, etc., se obtienen de forma segura del servicio MySQL
-    // gracias a la configuración de ${{REF}} en Railway.
-    host: process.env.DB_HOST,             // Lee mysql.railway.internal
-    user: process.env.DB_USER,             // Lee root
-    password: process.env.DB_PASSWORD,     // Lee la contraseña nueva y segura
-    database: 'cedulas',                   // El esquema correcto
-    port: process.env.DB_PORT,             // Lee 3306
+    // Lee las variables DB_HOST, DB_USER, etc., configuradas en Railway
+    host: process.env.DB_HOST,             
+    user: process.env.DB_USER,             
+    password: process.env.DB_PASSWORD,     
+    database: 'cedulas',                   // El esquema donde está la tabla
+    port: process.env.DB_PORT,             
     waitForConnections: true,
     connectionLimit: 10
 });
 
-// Middleware para aceptar JSON
 app.use(express.json());
 
-// Servir archivos estáticos (HTML, CSS, JS) del directorio actual
-// Esto resuelve el error 'Cannot GET /index.html'
+// Servir archivos estáticos (incluyendo index.html) del directorio raíz
 app.use(express.static(__dirname)); 
 
 // ----------------------------------------------------
 // RUTA PRINCIPAL DE CONSULTA POR CÉDULA
 // ----------------------------------------------------
 app.get('/api/cedula/:id', async (req, res) => {
-    // La base de datos ya está optimizada con el índice (idx_nuip)
-    // para que esta consulta sea rápida y no cause el error 499.
+    // La consulta es rápida gracias a la indexación completada.
     const cedulaId = req.params.id;
     const query = `SELECT * FROM ani_filtered WHERE ANINuip = ? LIMIT 1`; 
 
@@ -44,7 +44,7 @@ app.get('/api/cedula/:id', async (req, res) => {
         res.json(rows[0]);
 
     } catch (error) {
-        console.error("Error al consultar la base de datos:", error);
+        console.error("Error al consultar la base de datos:", error); 
         res.status(500).json({ error: 'Error interno del servidor al consultar datos.' });
     }
 });

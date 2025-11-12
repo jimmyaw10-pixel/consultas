@@ -1,13 +1,14 @@
 {
-  "name": "api-consulta-cedulas",
+  "name": "consultas-cedulas-api",
   "version": "1.0.0",
-  "description": "API REST para consultar base de datos de cédulas en Railway",
+  "description": "API para consultar cédulas en base de datos MySQL en Railway.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "mysql2": "^3.9.7"
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.1"
   }
 }
