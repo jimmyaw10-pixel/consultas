@@ -12,7 +12,7 @@ const pool = mysql.createPool({
     host: 'ballast.proxy.rlwy.net',           // <-- HOST PÚBLICO (COMO WORKBENCH)
     user: 'root',                             // Usuario
     password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Contraseña
-    database: 'railway',                      // Esquema
+    database: 'cedulas',                      // Esquema
     port: 35462,                              // <-- PUERTO PÚBLICO TCP
     waitForConnections: true,
     connectionLimit: 10
@@ -51,3 +51,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
+
