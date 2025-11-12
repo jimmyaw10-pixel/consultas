@@ -1,34 +1,30 @@
 const express = require('express');
-const mysql = require('mysql2/promise'); // Usamos la versión con promesas
+const mysql = require('mysql2/promise');
 
 const app = express();
-// Railway expone el puerto 8080 por defecto, pero process.env.PORT es más seguro
 const PORT = process.env.PORT || 3000; 
 
 // --------------------------------------------------------------------------
-// CONFIGURACIÓN DE CONEXIÓN CON VALORES FIJOS (para solución rápida)
-// ¡Asegúrate de que la contraseña y el nombre de la base de datos sean correctos!
+// ¡SOLUCIÓN DE EMERGENCIA!
+// Usamos el host y puerto de proxy público (inseguro) para saltar el firewall interno.
 // --------------------------------------------------------------------------
 const pool = mysql.createPool({
-    host: 'mysql.railway.internal',                   //
-    user: 'root',                                     // Usuario de la BD
+    host: 'ballast.proxy.rlwy.net',           // <-- HOST PÚBLICO (COMO WORKBENCH)
+    user: 'root',                             // Usuario
     password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Contraseña
-    database: 'railway',                              // Nombre del esquema
-    port: 3306,                                       // Puerto interno
+    database: 'railway',                      // Esquema
+    port: 35462,                              // <-- PUERTO PÚBLICO TCP
     waitForConnections: true,
     connectionLimit: 10
 });
 
-// Middleware para aceptar JSON
 app.use(express.json());
 
-// ----------------------------------------------------
 // RUTA PRINCIPAL DE CONSULTA POR CÉDULA
-// ----------------------------------------------------
 app.get('/api/cedula/:id', async (req, res) => {
     const cedulaId = req.params.id;
     
-    // CONSULTA CORREGIDA: Usa la tabla 'ani_filtered' y la columna 'ANINuip'
+    // Consulta SQL con la tabla y columna correctas
     const query = `SELECT * FROM ani_filtered WHERE ANINuip = ? LIMIT 1`; 
 
     try {
@@ -38,17 +34,15 @@ app.get('/api/cedula/:id', async (req, res) => {
             return res.status(404).json({ message: "Cédula no encontrada." });
         }
         
-        // Devuelve el primer resultado (los datos de la persona) como JSON
         res.json(rows[0]);
 
     } catch (error) {
-        // Esto registrará el error real (ej. problema de tabla/columna) en los logs de Railway
+        // En este punto, el error ya no debería ser de conexión.
         console.error("Error al consultar la base de datos:", error);
         res.status(500).json({ error: 'Error interno del servidor al consultar datos.' });
     }
 });
 
-// Ruta de prueba simple
 app.get('/', (req, res) => {
     res.send('API de Cédulas en funcionamiento.');
 });
@@ -56,10 +50,4 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
-
 });
-
-
-
-
-
