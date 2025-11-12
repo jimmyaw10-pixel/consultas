@@ -10,11 +10,11 @@ const PORT = process.env.PORT || 3000;
 // ¡Asegúrate de que la contraseña y el nombre de la base de datos sean correctos!
 // --------------------------------------------------------------------------
 const pool = mysql.createPool({
-    host: 'MySQL',                           // <-- ¡ESTA ES LA CORRECCIÓN!
+    host: process.env.MYSQL_HOST,           // LEE LA VARIABLE DE ENTORNO
     user: 'root',
-    password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Tu contraseña
-    database: 'railway',                       // Tu esquema
-    port: 3306,                                // Puerto interno
+    password: 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa', // Usa la contraseña codificada
+    database: 'railway',
+    port: process.env.MYSQL_PORT,           // LEE LA VARIABLE DE ENTORNO
     waitForConnections: true,
     connectionLimit: 10
 });
@@ -58,6 +58,7 @@ app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 
 });
+
 
 
 
