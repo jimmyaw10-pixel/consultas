@@ -5,11 +5,12 @@ import urllib.parse as urlparse
 # Importar la librería CORS
 from flask_cors import CORS 
 
-# -----------------------------------------------------------------
-# SOLUCIÓN CORS: Habilitar CORS para TODAS las rutas y Orígenes (*)
-CORS(app) 
-# -----------------------------------------------------------------
+# 1. CREAR LA APLICACIÓN FLASK
 app = Flask(__name__)
+
+# 2. HABILITAR CORS (SOLUCIÓN AL ERROR) - Ahora 'app' ya existe
+# Esto permite que la API sea consultada desde cualquier dominio (*)
+CORS(app) 
 
 # --- 1. CONFIGURACIÓN DE CONEXIÓN (PROBADA Y ESTABLE) ---
 # Leemos la variable MYSQL_PUBLIC_URL (inyectada manualmente para evitar el fallo de DNS de Railway)
@@ -116,6 +117,8 @@ def index():
 
                 try {
                     // Llama a la API que devuelve datos crudos
+                    // Si el frontend está en Railway y el backend también, funciona con ruta relativa '/api/cedula'
+                    // Si el frontend está en otro dominio, la solución CORS lo permite
                     const response = await fetch('/api/cedula?cedulaId=' + cedulaId);
                     const data = await response.json();
 
