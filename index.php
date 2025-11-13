@@ -1,15 +1,15 @@
 <?php
-// Reportar errores para depuración (solo en desarrollo)
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
-
 // --- 1. CONFIGURACIÓN DE CONEXIÓN SEGURA (Variables de Railway) ---
-// Railway automáticamente expone estas variables del servicio MySQL
-$dbHost     = 'mysql.railway.internal'; // <--- CAMBIO CLAVE: Usar host interno directo
-$dbUser     = getenv('DB_USER');
-$dbPass     = getenv('DB_PASSWORD');
-$dbPort     = getenv('DB_PORT');
-$dbName     = 'cedulas';
+// El método getenv() es seguro porque las credenciales no se exponen al cliente.
+// Usamos getenv() solo para las credenciales seguras (User y Pass).
+$dbHost     = 'mysql.railway.internal'; // Forzamos Host interno de Railway
+$dbUser     = getenv('DB_USER');         // Leemos User de Railway
+$dbPass     = getenv('DB_PASSWORD');     // Leemos Pass de Railway
+$dbPort     = '3306';                    // Forzamos Puerto estándar
+$dbName     = 'cedulas'; 
+
+// DSN forzado: Usamos el Host y Puerto fijos para evitar el error de conexión (Error 500)
+$dsn = "mysql:host=mysql.railway.internal;port=3306;dbname=$dbName;charset=utf8mb4";
 
 // Si la URL tiene un parámetro 'cedulaId', es una llamada API.
 if (isset($_GET['cedulaId'])) {
@@ -25,12 +25,11 @@ if (isset($_GET['cedulaId'])) {
     }
 
     try {
-        // Conexión a la base de datos (usando la conexión interna segura)
-        $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbName;charset=utf8mb4";
+        // Conexión a la base de datos con el DSN forzado.
         $pdo = new PDO($dsn, $dbUser, $dbPass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Consulta optimizada gracias al índice creado anteriormente
+        // Consulta optimizada gracias al índice creado anteriormente.
         $stmt = $pdo->prepare("SELECT * FROM ani_filtered WHERE ANINuip = ? LIMIT 1");
         $stmt->execute([$cedulaId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -42,7 +41,7 @@ if (isset($_GET['cedulaId'])) {
             echo json_encode(['message' => 'Cédula no encontrada.']);
         }
     } catch (PDOException $e) {
-        // Error de conexión a la base de datos
+        // Devuelve el error de conexión en la API para facilitar la depuración
         http_response_code(500);
         echo json_encode(['error' => 'Error de servidor: ' . $e->getMessage()]);
     }
@@ -112,16 +111,17 @@ if (isset($_GET['cedulaId'])) {
                 } else if (response.status === 200) {
                     mostrarResultados(data);
                 } else {
+                    // Si el servidor devuelve 500, el mensaje de error de PDO debería estar aquí
                     resultsDiv.innerHTML = `⚠️ Error del servidor: ${data.error || 'Algo salió mal.'}`;
                 }
 
             } catch (error) {
                 console.error('Error de conexión:', error);
-                resultsDiv.innerHTML = '🚨 Error de conexión o JSON inválido.';
+                resultsDiv.innerHTML = '🚨 Error de conexión. Verifique que la API esté activa.';
             }
         }
         
-        // Función para mostrar resultados (la misma que en el código anterior)
+        // Función para mostrar resultados
         function mostrarResultados(data) {
             const resultsDiv = document.getElementById('results');
             let html = '<h3>✅ Resultado Encontrado</h3>';
