@@ -1,16 +1,9 @@
-# Usa una imagen base de PHP oficial con Apache
-FROM php:8.2-apache
+# Usa una imagen de PHP que viene con el servidor web Caddy (más simple que Apache)
+FROM dunglas/frankenphp:latest-php8.2-alpine
 
-# 1. Fuerza la instalación de los drivers MySQL (Soluciona "could not find driver")
-# Se utiliza el comando "apt-get install -y libpq-dev" para asegurar dependencias
-RUN apt-get update && apt-get install -y libpq-dev \
+# 1. Fuerza la instalación de los drivers MySQL (esto es esencial y usa 'apk' para Alpine)
+RUN apk add --no-cache libpq-dev \
     && docker-php-ext-install pdo pdo_mysql
 
-# 2. Habilita la reescritura de URL 
-RUN a2enmod rewrite
-
-# 3. Copia todo tu código (index.php) al servidor web
-COPY . /var/www/html/
-
-# 4. Comando de inicio
-CMD ["apache2-foreground"]
+# 2. Copia tu código
+COPY . /app
