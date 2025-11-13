@@ -1,16 +1,15 @@
-# app.py (Python/Flask - Solución Final)
 import os
 from flask import Flask, render_template_string, request, jsonify
 import mysql.connector
 
 app = Flask(__name__)
 
-# --- CONFIGURACIÓN DE CONEXIÓN SEGURA (Railway/Render) ---
-# Usamos las credenciales reales de tu servicio MySQL (las que ya probamos)
-DB_HOST = 'mysql.railway.internal'
-DB_USER = 'TU_USUARIO_AQUÍ'         # <-- Usuario Real
-DB_PASS = 'TU_CONTRASEÑA_AQUÍ'     # <-- Contraseña Real
-DB_NAME = 'cedulas'
+# --- CONFIGURACIÓN DE CONEXIÓN SEGURA (Variables de Railway) ---
+DB_HOST = os.environ.get('DB_HOST')       # Lee de Railway
+DB_USER = os.environ.get('DB_USER')       # Lee de Railway
+DB_PASS = os.environ.get('DB_PASSWORD')   # Lee de Railway
+DB_NAME = os.environ.get('DB_NAME')       # Lee de Railway
+
 
 @app.route('/', methods=['GET'])
 def index():
