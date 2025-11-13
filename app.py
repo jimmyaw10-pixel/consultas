@@ -8,12 +8,85 @@ from flask_cors import CORS
 # 1. CREAR LA APLICACIÓN FLASK
 app = Flask(__name__)
 
-# 2. HABILITAR CORS (SOLUCIÓN AL ERROR) - Ahora 'app' ya existe
-# Esto permite que la API sea consultada desde cualquier dominio (*)
+# 2. HABILITAR CORS (SOLUCIÓN AL ERROR)
 CORS(app) 
 
+# --- LÓGICA DE TRADUCCIÓN DE CÓDIGOS DE UBICACIÓN (lug_ori.txt) ---
+# Se usará un diccionario global para guardar los códigos {código_DANE: nombre_ciudad}
+LOCATION_MAP = {}
+
+def load_location_data():
+    """
+    Carga los códigos de ubicación del archivo lug_ori.txt a un diccionario para búsquedas rápidas.
+    El archivo DEBE estar en el mismo directorio que app.py.
+    """
+    global LOCATION_MAP
+    file_path = 'lug_ori.txt' # Nombre del archivo
+    
+    try:
+        # Intenta leer el archivo con codificación UTF-8
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            try:
+                # La línea tiene el formato |CÓDIGO|CIUDAD
+                # Elimina el primer y último pipe y divide por el pipe restante
+                parts = line.strip('|').split('|')
+                if len(parts) == 2:
+                    code, city_name = parts
+                    # Guardamos el código (ej: '01001') y el nombre de la ciudad
+                    LOCATION_MAP[code.strip()] = city_name.strip()
+            except:
+                continue
+        print(f"Cargados {len(LOCATION_MAP)} códigos de ubicación desde {file_path}.")
+    
+    except FileNotFoundError:
+        print(f"ERROR: Archivo de ubicaciones '{file_path}' no encontrado. Asegúrese de incluirlo en el deploy de Railway.")
+        print("La traducción de códigos no funcionará hasta que se suba el archivo.")
+    except Exception as e:
+        print(f"Error al cargar datos de ubicación: {e}")
+
+
+def process_location_code(full_code):
+    """
+    Procesa el código completo (e.g., 24421001000) para extraer el código municipal (e.g., 21001).
+    Busca el nombre de la ciudad en LOCATION_MAP.
+    """
+    if not full_code:
+        return 'N/A'
+    
+    code_str = str(full_code)
+    
+    # Lógica de extracción: quitar los 3 primeros y los 3 últimos (244|XXXXX|000)
+    # Se espera un código total de 11 dígitos para esta lógica
+    if len(code_str) == 11:
+        # Extrae los 5 dígitos centrales (índices 3 al 8)
+        search_code = code_str[3:8] 
+        # Si el mapa está vacío, devolvemos un mensaje de advertencia
+        if not LOCATION_MAP:
+             return f'Código ({search_code}) (Datos de ubicación faltantes)'
+
+        return LOCATION_MAP.get(search_code, f'Código Desconocido ({search_code})')
+    
+    # Si el código ya tiene 5 dígitos (código DANE), lo busca directamente 
+    if len(code_str) == 5:
+         if not LOCATION_MAP:
+             return f'Código ({code_str}) (Datos de ubicación faltantes)'
+             
+         return LOCATION_MAP.get(code_str, f'Código Desconocido ({code_str})')
+
+    return 'Código de Ubicación Inválido'
+
+# Llamar a la función de carga al inicio de la aplicación
+load_location_data()
+
+
 # --- 1. CONFIGURACIÓN DE CONEXIÓN (PROBADA Y ESTABLE) ---
-# Leemos la variable MYSQL_PUBLIC_URL (inyectada manualmente para evitar el fallo de DNS de Railway)
 MYSQL_URL_ENV_NAME = 'MYSQL_PUBLIC_URL'
 MYSQL_URL = os.environ.get(MYSQL_URL_ENV_NAME)
 
@@ -60,7 +133,7 @@ def index():
     </head>
     <body>
         <div class="container">
-            <h1>🔍 Buscador de Cédulas (Final)</h1>
+            <h1>🔍 Buscador de Cédulas (Final con Ubicación)</h1>
             <div>
                 <input type="text" id="cedulaInput" placeholder="Ingrese el número de cédula" maxlength="10">
                 <br><br><button onclick="buscarCedula()">Buscar</button>
@@ -116,9 +189,7 @@ def index():
                 }
 
                 try {
-                    // Llama a la API que devuelve datos crudos
-                    // Si el frontend está en Railway y el backend también, funciona con ruta relativa '/api/cedula'
-                    // Si el frontend está en otro dominio, la solución CORS lo permite
+                    // Llama a la API que devuelve datos crudos y traducidos
                     const response = await fetch('/api/cedula?cedulaId=' + cedulaId);
                     const data = await response.json();
 
@@ -149,6 +220,11 @@ def index():
                 html += `<p><strong>Apellidos:</strong> ${data.ANIApellido1 || ''} ${data.ANIApellido2 || ''}</p>`;
                 html += `<hr style="border: 0.5px solid #ccc;">`;
                 
+                // Nuevos campos de Ubicación
+                html += `<p><strong>Lugar de Nacimiento:</strong> ${data.LugarNacimientoNombre || 'N/A'}</p>`;
+                html += `<p><strong>Lugar de Expedición:</strong> ${data.LugarExpedicionNombre || 'N/A'}</p>`;
+                html += `<hr style="border: 0.5px solid #ccc;">`;
+                
                 // Fecha de Nacimiento (Tercera línea)
                 html += `<p><strong>Fecha de Nacimiento:</strong> ${fchNacimientoFormatted}</p>`;
                 
@@ -166,11 +242,11 @@ def index():
     """
     return render_template_string(html_content)
 
-# --- 3. API BACKEND (Devuelve Datos Crudos) ---
+# --- 3. API BACKEND (Devuelve Datos Crudos y Traducidos) ---
 
 @app.route('/api/cedula', methods=['GET'])
 def get_cedula():
-    """Función API que consulta la base de datos y devuelve los datos crudos (sin formato)."""
+    """Función API que consulta la base de datos, traduce los códigos de ubicación y devuelve los datos."""
     cedula_id = request.args.get('cedulaId')
     
     # Verifica que la conexión funcione
@@ -200,7 +276,15 @@ def get_cedula():
         cnx.close()
 
         if result:
-            # Devuelve el resultado TAL CUAL lo da la DB (sin formato)
+            # TRADUCIR CÓDIGOS DE UBICACIÓN
+            # Asumimos que los campos de la DB se llaman LUGIdNacimiento y LUGIdExpedicion
+            lug_nac_id = result.get('LUGIdNacimiento')
+            lug_exp_id = result.get('LUGIdExpedicion') 
+            
+            # Traducir los códigos a nombres de ciudades y añadir al JSON de respuesta
+            result['LugarNacimientoNombre'] = process_location_code(lug_nac_id)
+            result['LugarExpedicionNombre'] = process_location_code(lug_exp_id)
+            
             return jsonify(result), 200
         else:
             return jsonify({'message': 'Cédula no encontrada.'}), 404
