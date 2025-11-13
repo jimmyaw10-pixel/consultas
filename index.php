@@ -5,11 +5,11 @@
 
 // --- 1. CONFIGURACIÓN DE CONEXIÓN SEGURA (Variables de Railway) ---
 // Railway automáticamente expone estas variables del servicio MySQL
-$dbHost     = getenv('DB_HOST');
+$dbHost     = 'mysql.railway.internal'; // <--- CAMBIO CLAVE: Usar host interno directo
 $dbUser     = getenv('DB_USER');
 $dbPass     = getenv('DB_PASSWORD');
 $dbPort     = getenv('DB_PORT');
-$dbName     = 'cedulas'; 
+$dbName     = 'cedulas';
 
 // Si la URL tiene un parámetro 'cedulaId', es una llamada API.
 if (isset($_GET['cedulaId'])) {
