@@ -5,10 +5,10 @@ import mysql.connector
 app = Flask(__name__)
 
 # --- CONFIGURACIÓN DE CONEXIÓN SEGURA (Variables de Railway) ---
-DB_HOST = os.environ.get('DB_HOST')       # Lee de Railway
-DB_USER = os.environ.get('DB_USER')       # Lee de Railway
-DB_PASS = os.environ.get('DB_PASSWORD')   # Lee de Railway
-DB_NAME = os.environ.get('DB_NAME')       # Lee de Railway
+DB_HOST = 'mysql.railway.internal'
+DB_USER = os.environ.get('MYSQL_USER') or os.environ.get('MYSQL_ROOT_USER')
+DB_PASS = os.environ.get('MYSQL_ROOT_PASSWORD')
+DB_NAME = 'cedulas'
 
 
 @app.route('/', methods=['GET'])
