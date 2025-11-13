@@ -2,13 +2,11 @@ import os
 from flask import Flask, render_template_string, request, jsonify
 import mysql.connector
 import urllib.parse as urlparse
-from datetime import datetime
-from dateutil.relativedelta import relativedelta # Librería para cálculo de edad
 
 app = Flask(__name__)
 
-# --- CONFIGURACIÓN DE CONEXIÓN (PROBADA EN DIAGNÓSTICO) ---
-# Leemos la variable que funciona (que inyectaste manualmente)
+# --- 1. CONFIGURACIÓN DE CONEXIÓN (PROBADA Y ESTABLE) ---
+# Leemos la variable MYSQL_PUBLIC_URL (inyectada manualmente para evitar el fallo de DNS de Railway)
 MYSQL_URL_ENV_NAME = 'MYSQL_PUBLIC_URL'
 MYSQL_URL = os.environ.get(MYSQL_URL_ENV_NAME)
 
@@ -28,54 +26,11 @@ if MYSQL_URL:
     except Exception as e:
         print(f"Error al analizar la URL de MySQL: {e}")
 
-# --- FUNCIONES DE FORMATO Y CÁLCULO (NUEVAS) ---
-
-def calcular_edad(fecha_nacimiento):
-    """Calcula la edad a partir de la fecha de nacimiento."""
-    if not fecha_nacimiento:
-        return "N/A"
-    
-    # Asegurarse de que el input es un objeto datetime o una cadena válida
-    if isinstance(fecha_nacimiento, str):
-        try:
-            fn = datetime.strptime(fecha_nacimiento, '%Y-%m-%d')
-        except ValueError:
-            return "N/A"
-    else:
-        fn = fecha_nacimiento
-        
-    now = datetime.now()
-    edad = relativedelta(now, fn)
-    return f"{edad.years} años"
-
-def formatear_fecha(fecha):
-    """Formatea la fecha a día / mes(ABR) / año."""
-    if not fecha:
-        return "N/A"
-        
-    if isinstance(fecha, str):
-        try:
-            dt = datetime.strptime(fecha, '%Y-%m-%d')
-        except ValueError:
-            return str(fecha)
-    else:
-        dt = fecha
-        
-    meses_abreviados = {
-        1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun', 
-        7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
-    }
-    
-    mes_abr = meses_abreviados.get(dt.month, 'N/A')
-    # Se añade el 0 a los días/meses de un dígito para el formato '02'
-    return f"{dt.day:02d} / {dt.month:02d}({mes_abr}) / {dt.year}"
-
-
-# --- LÓGICA DE LA API Y FRONTEND ---
+# --- 2. FRONTEND (HTML/JS con LÓGICA de Formato) ---
 
 @app.route('/', methods=['GET'])
 def index():
-    """Sirve la interfaz web (frontend) con el nuevo formato."""
+    """Sirve la interfaz web (frontend) y contiene toda la lógica de presentación."""
     
     html_content = """
     <!DOCTYPE html>
@@ -83,7 +38,7 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Consulta de Cédulas (Producción)</title>
+        <title>Consulta de Cédulas (Producción Final)</title>
         <style>
             body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
             .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -101,12 +56,48 @@ def index():
             <h1>🔍 Buscador de Cédulas (Final)</h1>
             <div>
                 <input type="text" id="cedulaInput" placeholder="Ingrese el número de cédula" maxlength="10">
-                <button onclick="buscarCedula()">Buscar</button>
+                <br><br><button onclick="buscarCedula()">Buscar</button>
             </div>
             <pre id="results">Ingrese una cédula para comenzar la búsqueda.</pre>
         </div>
 
         <script>
+            // --- LÓGICA DE FORMATO Y CÁLCULO EN JAVASCRIPT (Frontend) ---
+            const MESES_ABR = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+            function formatearFecha(fechaStr) {
+                if (!fechaStr) return 'N/A';
+                
+                // Crea objeto Date a partir de la cadena de MySQL (ej: '1980-05-15')
+                const date = new Date(fechaStr);
+                if (isNaN(date.getTime())) return fechaStr;
+
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0'); // Mes de 0 a 11
+                const monthAbr = MESES_ABR[date.getMonth()];
+                const year = date.getFullYear();
+
+                // Formato: día / mes(ABR) / año en digitos
+                return `${day} / ${month}(${monthAbr}) / ${year}`;
+            }
+
+            function calcularEdad(fechaNacimientoStr) {
+                if (!fechaNacimientoStr) return 'N/A';
+
+                const fechaNacimiento = new Date(fechaNacimientoStr);
+                const hoy = new Date();
+                
+                let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+                const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+                
+                if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+                    edad--;
+                }
+                
+                return `${edad} años`;
+            }
+
+            // --- FUNCIÓN DE BÚSQUEDA Y DISPLAY ---
             async function buscarCedula() {
                 const cedulaId = document.getElementById('cedulaInput').value.trim();
                 const resultsDiv = document.getElementById('results');
@@ -118,6 +109,7 @@ def index():
                 }
 
                 try {
+                    // Llama a la API que devuelve datos crudos
                     const response = await fetch('/api/cedula?cedulaId=' + cedulaId);
                     const data = await response.json();
 
@@ -132,19 +124,30 @@ def index():
             }
 
             function formatResults(data) {
-                // El orden lo dictamos aquí, ya que los datos están pre-formateados por Python
+                // Formateo de fechas para el display
+                const fchNacimientoFormatted = formatearFecha(data.ANIFchNacimiento);
+                const fchExpedicionFormatted = formatearFecha(data.ANIFchExpedicion);
+
                 let html = '<h3>✅ Información Encontrada</h3>';
                 
-                // Nombres y Apellidos
-                html += `<p><strong>Cédula:</strong> ${data['Cédula']}</p>`;
-                html += `<p><strong>Nombres:</strong> ${data['Nombres']}</p>`;
-                html += `<p><strong>Apellidos:</strong> ${data['Apellidos']}</p>`;
+                // ORDEN SOLICITADO
+                html += `<p><strong>Cédula:</strong> ${data.ANINuip || 'N/A'}</p>`;
+                
+                // Nombres (Primera línea)
+                html += `<p><strong>Nombres:</strong> ${data.ANINombre1 || ''} ${data.ANINombre2 || ''}</p>`;
+                
+                // Apellidos (Segunda línea)
+                html += `<p><strong>Apellidos:</strong> ${data.ANIApellido1 || ''} ${data.ANIApellido2 || ''}</p>`;
                 html += `<hr style="border: 0.5px solid #ccc;">`;
                 
-                // Fechas y Edad
-                html += `<p><strong>Fch. Nacimiento:</strong> ${data['Fecha de Nacimiento']}</p>`;
-                html += `<p><strong>Fch. Expedición:</strong> ${data['Fecha de Expedicion']}</p>`;
-                html += `<p><strong>Edad Actual:</strong> ${data['Edad']}</p>`;
+                // Fecha de Nacimiento (Tercera línea)
+                html += `<p><strong>Fecha de Nacimiento:</strong> ${fchNacimientoFormatted}</p>`;
+                
+                // Fecha de Expedición (Cuarta línea)
+                html += `<p><strong>Fecha de Expedición:</strong> ${fchExpedicionFormatted}</p>`;
+                
+                // Edad (Quinta línea)
+                html += `<p><strong>Edad Actual:</strong> ${calcularEdad(data.ANIFchNacimiento)}</p>`;
                 
                 return html;
             }
@@ -154,9 +157,11 @@ def index():
     """
     return render_template_string(html_content)
 
+# --- 3. API BACKEND (Devuelve Datos Crudos) ---
+
 @app.route('/api/cedula', methods=['GET'])
 def get_cedula():
-    """Función API para consultar la base de datos y formatear los resultados."""
+    """Función API que consulta la base de datos y devuelve los datos crudos (sin formato)."""
     cedula_id = request.args.get('cedulaId')
     
     # Verifica que la conexión funcione
@@ -167,7 +172,7 @@ def get_cedula():
         return jsonify({'error': 'Cédula no proporcionada.'}), 400
 
     try:
-        # Conexión PROBADA EXITOSAMENTE
+        # CONEXIÓN PROBADA EXITOSAMENTE
         cnx = mysql.connector.connect(
             host=DB_HOST,
             user=DB_USER,
@@ -186,21 +191,8 @@ def get_cedula():
         cnx.close()
 
         if result:
-            # --- MANEJO Y FORMATO DE DATOS FINALES ---
-            fch_nacimiento = result.get('ANIFchNacimiento')
-            fch_expedicion = result.get('ANIFchExpedicion')
-            
-            # Construcción del diccionario final con el formato deseado
-            formato_data = {
-                'Cédula': result.get('ANINuip', 'N/A'),
-                'Nombres': f"{result.get('ANINombre1', '')} {result.get('ANINombre2', '')}".strip(),
-                'Apellidos': f"{result.get('ANIApellido1', '')} {result.get('ANIApellido2', '')}".strip(),
-                'Fecha de Nacimiento': formatear_fecha(fch_nacimiento),
-                'Fecha de Expedicion': formatear_fecha(fch_expedicion),
-                'Edad': calcular_edad(fch_nacimiento),
-            }
-            
-            return jsonify(formato_data), 200
+            # Devuelve el resultado TAL CUAL lo da la DB (sin formato)
+            return jsonify(result), 200
         else:
             return jsonify({'message': 'Cédula no encontrada.'}), 404
 
