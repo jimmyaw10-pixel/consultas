@@ -220,16 +220,15 @@ def index():
                 html += `<p><strong>Apellidos:</strong> ${data.ANIApellido1 || ''} ${data.ANIApellido2 || ''}</p>`;
                 html += `<hr style="border: 0.5px solid #ccc;">`;
                 
-                // Nuevos campos de Ubicación
+                // FECHA Y LUGAR DE NACIMIENTO (Nuevo Orden)
+                html += `<p><strong>Fecha de Nacimiento:</strong> ${fchNacimientoFormatted}</p>`;
                 html += `<p><strong>Lugar de Nacimiento:</strong> ${data.LugarNacimientoNombre || 'N/A'}</p>`;
+                html += `<hr style="border: 0.5px solid #ccc;">`;
+
+                // FECHA Y LUGAR DE EXPEDICIÓN (Nuevo Orden)
+                html += `<p><strong>Fecha de Expedición:</strong> ${fchExpedicionFormatted}</p>`;
                 html += `<p><strong>Lugar de Expedición:</strong> ${data.LugarExpedicionNombre || 'N/A'}</p>`;
                 html += `<hr style="border: 0.5px solid #ccc;">`;
-                
-                // Fecha de Nacimiento (Tercera línea)
-                html += `<p><strong>Fecha de Nacimiento:</strong> ${fchNacimientoFormatted}</p>`;
-                
-                // Fecha de Expedición (Cuarta línea)
-                html += `<p><strong>Fecha de Expedición:</strong> ${fchExpedicionFormatted}</p>`;
                 
                 // Edad (Quinta línea)
                 html += `<p><strong>Edad Actual:</strong> ${calcularEdad(data.ANIFchNacimiento)}</p>`;
