@@ -2,11 +2,12 @@
 // --- 1. CONFIGURACIÓN DE CONEXIÓN SEGURA (Variables de Railway) ---
 // El método getenv() es seguro porque las credenciales no se exponen al cliente.
 // Usamos getenv() solo para las credenciales seguras (User y Pass).
-$dbHost     = 'mysql.railway.internal'; // Forzamos Host interno de Railway
-$dbUser     = getenv('DB_USER');         // Leemos User de Railway
-$dbPass     = getenv('DB_PASSWORD');     // Leemos Pass de Railway
-$dbPort     = '3306';                    // Forzamos Puerto estándar
-$dbName     = 'cedulas'; 
+$dbHost     = 'mysql.railway.internal'; // Host interno forzado
+$dbUser     = 'root';         // <--- ¡REEMPLAZAR con tu usuario real! (Probablemente 'root')
+$dbPass     = 'kdvOXgdliBYdDhKzBoaiboabmCPwDxTa';     // <--- ¡REEMPLAZAR con tu contraseña real!
+$dbPort     = '3306';                    // Puerto estándar
+$dbName     = 'cedulas';
+
 
 // DSN forzado: Usamos el Host y Puerto fijos para evitar el error de conexión (Error 500)
 $dsn = "mysql:host=mysql.railway.internal;port=3306;dbname=$dbName;charset=utf8mb4";
