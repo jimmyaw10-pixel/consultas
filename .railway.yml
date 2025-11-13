@@ -3,6 +3,5 @@ build:
   plugins:
     - name: heroku-community/php
       settings:
-        # Esto instala y activa el módulo PDO MySQL en el contenedor PHP.
         php_extensions:
           - pdo-mysql
