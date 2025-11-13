@@ -1,7 +1,0 @@
-build:
-  builder: heroku/php
-  plugins:
-    - name: heroku-community/php
-      settings:
-        php_extensions:
-          - pdo-mysql
