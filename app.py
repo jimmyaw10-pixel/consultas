@@ -2,7 +2,13 @@ import os
 from flask import Flask, render_template_string, request, jsonify
 import mysql.connector
 import urllib.parse as urlparse
+# Importar la librería CORS
+from flask_cors import CORS 
 
+# -----------------------------------------------------------------
+# SOLUCIÓN CORS: Habilitar CORS para TODAS las rutas y Orígenes (*)
+CORS(app) 
+# -----------------------------------------------------------------
 app = Flask(__name__)
 
 # --- 1. CONFIGURACIÓN DE CONEXIÓN (PROBADA Y ESTABLE) ---
