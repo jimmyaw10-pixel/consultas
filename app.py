@@ -140,17 +140,17 @@ def index():
                     if (response.status === 200) {
                         resultsDiv.innerHTML = `
                             <h3>✅ Información Encontrada</h3>
-                            <p><strong>Cédula:</strong> ${data.ANINuip || 'N/A'}</p>
-                            <p><strong>Nombres:</strong> ${data.ANINombre1 || ''} ${data.ANINombre2 || ''}</p>
-                            <p><strong>Apellidos:</strong> ${data.ANIApellido1 || ''} ${data.ANIApellido2 || ''}</p>
+                            <strong>Cédula:</strong> ${data.ANINuip || 'N/A'}
+                            <strong>Nombres:</strong> ${data.ANINombre1 || ''} ${data.ANINombre2 || ''}
+                            <strong>Apellidos:</strong> ${data.ANIApellido1 || ''} ${data.ANIApellido2 || ''}
                             <hr>
-                            <p><strong>Fecha de Nacimiento:</strong> ${formatearFecha(data.ANIFchNacimiento)}</p>
-                            <p><strong>Lugar de Nacimiento:</strong> ${data.LugarNacimientoNombre || 'N/A'}</p>
+                            <strong>Fecha de Nacimiento:</strong> ${formatearFecha(data.ANIFchNacimiento)}
+                            <strong>Lugar de Nacimiento:</strong> ${data.LugarNacimientoNombre || 'N/A'}
                             <hr>
-                            <p><strong>Fecha de Expedición:</strong> ${formatearFecha(data.ANIFchExpedicion)}</p>
-                            <p><strong>Lugar de Expedición:</strong> ${data.LugarExpedicionNombre || 'N/A'}</p>
+                            <strong>Fecha de Expedición:</strong> ${formatearFecha(data.ANIFchExpedicion)}
+                            <strong>Lugar de Expedición:</strong> ${data.LugarExpedicionNombre || 'N/A'}
                             <hr>
-                            <p><strong>Edad Actual:</strong> ${calcularEdad(data.ANIFchNacimiento)}</p>
+                            <strong>Edad Actual:</strong> ${calcularEdad(data.ANIFchNacimiento)}
                         `;
                     } else {
                         resultsDiv.innerHTML = `⚠️ ${data.message || 'Error'}`;
