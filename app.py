@@ -296,4 +296,6 @@ def get_cedula():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port) puedess revisar este codigo que cuando consulto la fecha de nacimiento sale con un dia menos del que deberia
+    app.run(host='0.0.0.0', port=port) 
+
+
